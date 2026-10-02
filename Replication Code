@@ -1,1 +1,543 @@
+# =========================================================
+# REPLICATION ANALYSIS
+# =========================================================
+#
+# This script reproduces the analyses reported in the associated study.
+# It is designed for use with the publicly available, de-identified
+# replication dataset.
+#
+# Network diversity measures were constructed from the restricted
+# original data prior to de-identification. The public replication
+# dataset therefore contains pre-constructed normalized Gini-Simpson
+# indices for racial, socioeconomic, political, and gender diversity.
+#
+# Total interaction exposure and dimension-specific outgroup exposure
+# measures were also constructed prior to de-identification and are
+# included as pre-constructed variables in the replication dataset.
+#
+# The public dataset contains the complete-case analytic sample used
+# for the models below. No friend-level attributes or original
+# respondent identifiers are included.
+#
+# Software used for the original analysis:
+# R version 4.5.1 (2025-06-13)
+#
+# =========================================================
 
+rm(list = ls())
+
+# ---------------------------------------------------------
+# Packages
+# ---------------------------------------------------------
+
+library(dplyr)
+library(readr)
+library(tidyr)
+library(parameters)
+
+
+# ---------------------------------------------------------
+# Load de-identified replication data
+# ---------------------------------------------------------
+
+setwd("C://Users//jkosa//Documents//R//MUST Project - Perspective Taking Project//Data")
+
+# If necessary, change this path to the location of the downloaded CSV.
+df_analysis <- read_csv(
+  "2. [No Friends] replication_data.csv",
+  show_col_types = FALSE
+)
+
+
+# ---------------------------------------------------------
+# Prepare categorical variables
+# ---------------------------------------------------------
+
+# Explicitly restore the reference categories used in the original
+# analysis. White is the reference category for respondent race.
+df_analysis <- df_analysis %>%
+  mutate(
+    respondents_race = factor(
+      respondents_race,
+      levels = c("White", "Asian", "Latino", "Other")
+    ),
+    gender_num = as.numeric(gender_num),
+    Form = factor(Form)
+  )
+
+
+# ---------------------------------------------------------
+# Replication checks
+# ---------------------------------------------------------
+
+# Analytic sample size
+nrow(df_analysis)
+
+# =========================================================
+# MAIN REGRESSION MODELS
+# =========================================================
+
+# ---------------------------------------------------------
+# Model 1: General interaction intensity
+# ---------------------------------------------------------
+
+Model1 <- lm(
+  Avg_Score ~
+    total_interaction_exposure +
+    respondents_race +
+    gender_num +
+    age_cohort +
+    mother_edu_years +
+    hs_gpa_num +
+    Form,
+  data = df_analysis
+)
+
+summary(Model1)
+nobs(Model1)
+
+# Standardized coefficients
+model_parameters(
+  Model1,
+  standardize = "refit",
+  p_adjust = NULL,
+  digits = 4
+)
+
+
+# ---------------------------------------------------------
+# Model 2: Cross-group exposure
+# ---------------------------------------------------------
+
+Model2 <- lm(
+  Avg_Score ~
+    race_outgroup_exposure +
+    ses_outgroup_exposure +
+    pol_outgroup_exposure +
+    gender_outgroup_exposure +
+    respondents_race +
+    gender_num +
+    age_cohort +
+    mother_edu_years +
+    hs_gpa_num +
+    Form,
+  data = df_analysis
+)
+
+summary(Model2)
+nobs(Model2)
+
+model_parameters(
+  Model2,
+  standardize = "refit",
+  p_adjust = NULL,
+  digits = 4
+)
+
+
+# ---------------------------------------------------------
+# Model 3: Friend network diversity
+# ---------------------------------------------------------
+
+Model3 <- lm(
+  Avg_Score ~
+    race_diversity_gs_norm +
+    ses_diversity_gs_norm +
+    pol_diversity_gs_norm +
+    gender_diversity_gs_norm +
+    respondents_race +
+    gender_num +
+    age_cohort +
+    mother_edu_years +
+    hs_gpa_num +
+    Form,
+  data = df_analysis
+)
+
+summary(Model3)
+nobs(Model3)
+
+model_parameters(
+  Model3,
+  standardize = "refit",
+  p_adjust = NULL,
+  digits = 4
+)
+
+
+# ---------------------------------------------------------
+# Model 4: General interaction intensity + cross-group exposure
+# ---------------------------------------------------------
+
+Model4 <- lm(
+  Avg_Score ~
+    total_interaction_exposure +
+    race_outgroup_exposure +
+    ses_outgroup_exposure +
+    pol_outgroup_exposure +
+    gender_outgroup_exposure +
+    respondents_race +
+    gender_num +
+    age_cohort +
+    mother_edu_years +
+    hs_gpa_num +
+    Form,
+  data = df_analysis
+)
+
+summary(Model4)
+nobs(Model4)
+
+model_parameters(
+  Model4,
+  standardize = "refit",
+  p_adjust = NULL,
+  digits = 4
+)
+
+
+# ---------------------------------------------------------
+# Model 5: Friend network diversity + general interaction intensity
+# ---------------------------------------------------------
+
+Model5 <- lm(
+  Avg_Score ~
+    race_diversity_gs_norm +
+    ses_diversity_gs_norm +
+    pol_diversity_gs_norm +
+    gender_diversity_gs_norm +
+    total_interaction_exposure +
+    respondents_race +
+    gender_num +
+    age_cohort +
+    mother_edu_years +
+    hs_gpa_num +
+    Form,
+  data = df_analysis
+)
+
+summary(Model5)
+nobs(Model5)
+
+model_parameters(
+  Model5,
+  standardize = "refit",
+  p_adjust = NULL,
+  digits = 4
+)
+
+
+# ---------------------------------------------------------
+# Model 6: Full model
+# ---------------------------------------------------------
+
+Model6 <- lm(
+  Avg_Score ~
+    race_diversity_gs_norm +
+    ses_diversity_gs_norm +
+    pol_diversity_gs_norm +
+    gender_diversity_gs_norm +
+    total_interaction_exposure +
+    race_outgroup_exposure +
+    ses_outgroup_exposure +
+    pol_outgroup_exposure +
+    gender_outgroup_exposure +
+    respondents_race +
+    gender_num +
+    age_cohort +
+    mother_edu_years +
+    hs_gpa_num +
+    Form,
+  data = df_analysis
+)
+
+summary(Model6)
+nobs(Model6)
+
+model_parameters(
+  Model6,
+  standardize = "refit",
+  p_adjust = NULL,
+  digits = 4
+)
+
+
+# ---------------------------------------------------------
+# Nested-model F test: Model 5 vs. Model 6
+# ---------------------------------------------------------
+
+anova(
+  Model5,
+  Model6
+)
+
+
+# =========================================================
+# GENDER-SPECIFIC MODELS
+# =========================================================
+
+# gender_num: 0 = men, 1 = women
+
+# ---------------------------------------------------------
+# Men: interaction intensity + cross-group exposure
+# ---------------------------------------------------------
+
+MenModel1 <- lm(
+  Avg_Score ~
+    total_interaction_exposure +
+    race_outgroup_exposure +
+    ses_outgroup_exposure +
+    pol_outgroup_exposure +
+    gender_outgroup_exposure +
+    respondents_race +
+    age_cohort +
+    mother_edu_years +
+    hs_gpa_num +
+    Form,
+  data = subset(df_analysis, gender_num == 0)
+)
+
+summary(MenModel1)
+nobs(MenModel1)
+
+model_parameters(
+  MenModel1,
+  standardize = "refit",
+  p_adjust = NULL,
+  digits = 4
+)
+
+
+# ---------------------------------------------------------
+# Men: full model
+# ---------------------------------------------------------
+
+MenModel2 <- lm(
+  Avg_Score ~
+    race_diversity_gs_norm +
+    ses_diversity_gs_norm +
+    pol_diversity_gs_norm +
+    gender_diversity_gs_norm +
+    total_interaction_exposure +
+    race_outgroup_exposure +
+    ses_outgroup_exposure +
+    pol_outgroup_exposure +
+    gender_outgroup_exposure +
+    respondents_race +
+    age_cohort +
+    mother_edu_years +
+    hs_gpa_num +
+    Form,
+  data = subset(df_analysis, gender_num == 0)
+)
+
+summary(MenModel2)
+nobs(MenModel2)
+
+model_parameters(
+  MenModel2,
+  standardize = "refit",
+  p_adjust = NULL,
+  digits = 4
+)
+
+anova(
+  MenModel1,
+  MenModel2
+)
+
+
+# ---------------------------------------------------------
+# Women: interaction intensity + cross-group exposure
+# ---------------------------------------------------------
+
+WomenModel1 <- lm(
+  Avg_Score ~
+    total_interaction_exposure +
+    race_outgroup_exposure +
+    ses_outgroup_exposure +
+    pol_outgroup_exposure +
+    gender_outgroup_exposure +
+    respondents_race +
+    age_cohort +
+    mother_edu_years +
+    hs_gpa_num +
+    Form,
+  data = subset(df_analysis, gender_num == 1)
+)
+
+summary(WomenModel1)
+nobs(WomenModel1)
+
+model_parameters(
+  WomenModel1,
+  standardize = "refit",
+  p_adjust = NULL,
+  digits = 4
+)
+
+
+# ---------------------------------------------------------
+# Women: full model
+# ---------------------------------------------------------
+
+WomenModel2 <- lm(
+  Avg_Score ~
+    race_diversity_gs_norm +
+    ses_diversity_gs_norm +
+    pol_diversity_gs_norm +
+    gender_diversity_gs_norm +
+    total_interaction_exposure +
+    race_outgroup_exposure +
+    ses_outgroup_exposure +
+    pol_outgroup_exposure +
+    gender_outgroup_exposure +
+    respondents_race +
+    age_cohort +
+    mother_edu_years +
+    hs_gpa_num +
+    Form,
+  data = subset(df_analysis, gender_num == 1)
+)
+
+summary(WomenModel2)
+nobs(WomenModel2)
+
+model_parameters(
+  WomenModel2,
+  standardize = "refit",
+  p_adjust = NULL,
+  digits = 4
+)
+
+anova(
+  WomenModel1,
+  WomenModel2
+)
+
+
+# =========================================================
+# GENDER INTERACTION MODEL
+# =========================================================
+
+Gender_InteractionModel <- lm(
+  Avg_Score ~
+    race_diversity_gs_norm * gender_num +
+    ses_diversity_gs_norm * gender_num +
+    pol_diversity_gs_norm * gender_num +
+    gender_diversity_gs_norm * gender_num +
+    total_interaction_exposure * gender_num +
+    race_outgroup_exposure * gender_num +
+    ses_outgroup_exposure * gender_num +
+    pol_outgroup_exposure * gender_num +
+    gender_outgroup_exposure * gender_num +
+    respondents_race +
+    age_cohort +
+    mother_edu_years +
+    hs_gpa_num +
+    Form,
+  data = df_analysis
+)
+
+summary(Gender_InteractionModel)
+nobs(Gender_InteractionModel)
+
+model_parameters(
+  Gender_InteractionModel,
+  standardize = "refit",
+  p_adjust = NULL,
+  digits = 4
+)
+
+
+# =========================================================
+# DESCRIPTIVE STATISTICS
+# =========================================================
+
+# Analytic sample size
+nrow(df_analysis)
+
+
+# ---------------------------------------------------------
+# Respondent race counts and proportions
+# ---------------------------------------------------------
+
+df_analysis %>%
+  count(respondents_race, .drop = FALSE) %>%
+  mutate(
+    Percent = round(100 * n / sum(n), 2)
+  )
+
+
+# ---------------------------------------------------------
+# Gender counts and proportions
+# ---------------------------------------------------------
+
+df_analysis %>%
+  count(gender_num) %>%
+  mutate(
+    Gender = case_when(
+      gender_num == 0 ~ "Men",
+      gender_num == 1 ~ "Women",
+      TRUE ~ NA_character_
+    ),
+    Percent = round(100 * n / sum(n), 2)
+  ) %>%
+  select(Gender, n, Percent)
+
+
+# ---------------------------------------------------------
+# Perspective-taking instrument form counts and proportions
+# ---------------------------------------------------------
+
+df_analysis %>%
+  count(Form) %>%
+  mutate(
+    Percent = round(100 * n / sum(n), 2)
+  )
+
+
+# ---------------------------------------------------------
+# Key continuous variables
+# ---------------------------------------------------------
+
+descriptive_statistics <- df_analysis %>%
+  summarise(
+    across(
+      c(
+        Avg_Score,
+        age_cohort,
+        mother_edu_years,
+        hs_gpa_num,
+        race_diversity_gs_norm,
+        ses_diversity_gs_norm,
+        pol_diversity_gs_norm,
+        gender_diversity_gs_norm,
+        total_interaction_exposure,
+        race_outgroup_exposure,
+        ses_outgroup_exposure,
+        pol_outgroup_exposure,
+        gender_outgroup_exposure
+      ),
+      list(
+        Mean = ~mean(.x, na.rm = TRUE),
+        SD   = ~sd(.x, na.rm = TRUE),
+        Min  = ~min(.x, na.rm = TRUE),
+        Max  = ~max(.x, na.rm = TRUE)
+      )
+    )
+  ) %>%
+  pivot_longer(
+    everything(),
+    names_to = c("Variable", ".value"),
+    names_pattern = "^(.*)_(Mean|SD|Min|Max)$"
+  )
+
+descriptive_statistics
+
+
+# ---------------------------------------------------------
+# Reproducibility information
+# ---------------------------------------------------------
+
+sessionInfo()
